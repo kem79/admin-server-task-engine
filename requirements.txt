@@ -1,0 +1,8 @@
+--trusted-host=10.62.65.209
+--trusted-host=pypi.python.org
+--trusted-host=pypi.org
+--trusted-host=files.pythonhosted.org
+celery==4.2.1
+celery[redis]==4.2.1
+redis==2.10.6
+newrelic_api==1.0.4
