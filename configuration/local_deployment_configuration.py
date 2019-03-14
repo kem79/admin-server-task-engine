@@ -7,3 +7,4 @@ from configuration.base_deployment_configuration import _BaseDeploymentConfigura
 class LocalDeploymentConfiguration(_BaseDeploymentConfiguration):
     broker_url = 'pyamqp://guest@192.168.99.100//'
     result_backend = 'redis://192.168.99.100'
+    postgres_url = 'postgres://guest:guest@192.168.99.100:5432/guest'

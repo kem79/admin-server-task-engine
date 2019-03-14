@@ -19,3 +19,5 @@ def get_deployment_configuration():
         return LocalDeploymentConfiguration
     else:
         raise Exception('environment type must be in {}'.format(expected_envs))
+
+deployment_configuration = get_deployment_configuration()

@@ -1,1 +1,0 @@
-from base_tasks.new_relic.applications_tasks import application_id_by_name, metric_data

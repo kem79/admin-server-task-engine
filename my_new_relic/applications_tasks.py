@@ -1,5 +1,5 @@
 from app.task_engine import app
-from base_tasks.new_relic.new_relic_base_task import NewRelicBaseTask
+from my_new_relic.new_relic_base_task import NewRelicBaseTask
 from newrelic_api.applications import Applications
 
 
