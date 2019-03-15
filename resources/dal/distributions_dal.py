@@ -1,13 +1,13 @@
 import os
 
-from resources.dal.base_dal import BaseDal
 from resources.dao.distributions_dao import Distribution
 
 
-class DistributionsDal(BaseDal):
+class DistributionsDal:
 
-    def __init__(self):
+    def __init__(self, session):
         super().__init__()
+        self.session = session
 
     def create(self, baseline_id, csv_file):
         """

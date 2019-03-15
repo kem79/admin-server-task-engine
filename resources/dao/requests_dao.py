@@ -1,4 +1,4 @@
-from resources.dao import Base
+from app import Base
 from resources.dao.baselines_dao import Baseline
 
 from sqlalchemy import Column, Integer, String, ForeignKey, Float

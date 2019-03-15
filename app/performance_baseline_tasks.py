@@ -1,4 +1,5 @@
 from app.task_engine import app
+from app import db_session
 from my_new_relic import application_id_by_name, metric_data
 from my_locust.tasks import start, stop
 
@@ -19,7 +20,9 @@ def delete(application_name,
     :param hatch_rate: th number of new user to simulate every second
     :return: the id of the baseline deleted
     """
-    bd = BaselinesDal()
+    # create session
+    session = db_session()
+    bd = BaselinesDal(session)
     baseline_id = bd.delete(application_name, number_of_users, hatch_rate)
     return baseline_id
 
@@ -44,6 +47,9 @@ def create_locust(application_name,
     :type hatch_rate: int
     :param hatch_rate: the number of users to create every second until total count is reached.
     """
+    # create a session
+    session = db_session()
+
     # start locust server
     proc_id = start(application_name, url, number_of_users, hatch_rate)
     experience_total_time = int(number_of_users/hatch_rate) + 1
@@ -51,17 +57,17 @@ def create_locust(application_name,
     stop(proc_id)
 
     # verify the micro-service name is in database, if not create it.
-    ad = ApplicationsDal()
+    ad = ApplicationsDal(session)
     app_id = ad.create_if_not_exist(application_name)
 
     # Create a baseline for a given number of users and a hatch rate
-    bd = BaselinesDal()
+    bd = BaselinesDal(session)
     baseline_id = bd.create(app_id, number_of_users, hatch_rate)
 
     # save locust performance metrics (2 files)
-    dd = DistributionsDal()
+    dd = DistributionsDal(session)
     dd.create(baseline_id, csv_file=application_name + '_distribution.csv')
-    rd = RequestsDal()
+    rd = RequestsDal(session)
     rd.create(baseline_id, csv_file=application_name + '_requests.csv')
 
     return 'Done'

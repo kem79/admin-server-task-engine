@@ -1,13 +1,12 @@
 import os
 from resources.dao.requests_dao import Request
 
-from resources.dal.base_dal import BaseDal
 
+class RequestsDal:
 
-class RequestsDal(BaseDal):
-
-    def __init__(self):
+    def __init__(self, session):
         super().__init__()
+        self.session = session
 
     def create(self, baseline_id, csv_file):
         """
@@ -28,18 +27,18 @@ class RequestsDal(BaseDal):
             csv_lines = csv.readlines()[1:-1]
         for line in csv_lines:
             line_tokens = [tokens.replace('"', '') for tokens in line.split(',')]
-            new_distribution = Request(method=line_tokens[0],
-                                       name=line_tokens[1],
-                                       number_of_requests=line_tokens[2],
-                                       number_of_failures=line_tokens[3],
-                                       median_response_time=line_tokens[4],
-                                       average_response_time=line_tokens[5],
-                                       min_response_time=line_tokens[6],
-                                       max_response_time=line_tokens[7],
-                                       average_content_size=line_tokens[8],
-                                       requests_per_second=line_tokens[9],
-                                       baseline_id=baseline_id)
-            new_requests.append(new_distribution)
+            new_request = Request(method=line_tokens[0],
+                                  name=line_tokens[1],
+                                  number_of_requests=line_tokens[2],
+                                  number_of_failures=line_tokens[3],
+                                  median_response_time=line_tokens[4],
+                                  average_response_time=line_tokens[5],
+                                  min_response_time=line_tokens[6],
+                                  max_response_time=line_tokens[7],
+                                  average_content_size=line_tokens[8],
+                                  requests_per_second=line_tokens[9],
+                                  baseline_id=baseline_id)
+            new_requests.append(new_request)
         os.remove(csv_file)
         self.session.bulk_save_objects(new_requests)
         self.session.commit()

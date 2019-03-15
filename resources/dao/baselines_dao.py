@@ -1,4 +1,4 @@
-from resources.dao import Base
+from app import Base
 from resources.dao.applications_dao import Application
 
 from sqlalchemy import Column, Integer, ForeignKey
