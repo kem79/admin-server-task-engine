@@ -7,6 +7,23 @@ from resources import ApplicationsDal, DistributionsDal, BaselinesDal, RequestsD
 from celery import chain
 from time import sleep
 
+
+@app.task
+def delete(application_name,
+           number_of_users,
+           hatch_rate):
+    """
+    Delete a performance baseline
+    :param application_name: the name of the micro-service
+    :param number_of_users: the number of users used in the baseline
+    :param hatch_rate: th number of new user to simulate every second
+    :return: the id of the baseline deleted
+    """
+    bd = BaselinesDal()
+    baseline_id = bd.delete(application_name, number_of_users, hatch_rate)
+    return baseline_id
+
+
 @app.task
 def create_locust(application_name,
                   url,
