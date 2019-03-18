@@ -1,3 +1,5 @@
+import json
+
 from app import Base
 from resources.dao.baselines_dao import Baseline
 

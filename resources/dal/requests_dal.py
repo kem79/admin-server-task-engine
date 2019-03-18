@@ -5,8 +5,24 @@ from resources.dao.requests_dao import Request
 class RequestsDal:
 
     def __init__(self, session):
-        super().__init__()
         self.session = session
+
+    def get_columns(self):
+        """
+        Return the table column names
+        :return:
+        """
+        return [column['name'] for column in self.session.query(Request).column_descriptions]
+
+    def get_by_baseline_id(self, baseline_id):
+        """
+        Retrieve all the request records for the given baseline id
+        :type baseline_id: int
+        :param baseline_id: the id of the baseline
+        :type dict
+        :return: a JSON representing the request information
+        """
+        return self.session.query(Request).filter(Request.baseline_id == baseline_id).all()
 
     def create(self, baseline_id, csv_file):
         """
@@ -42,3 +58,4 @@ class RequestsDal:
         os.remove(csv_file)
         self.session.bulk_save_objects(new_requests)
         self.session.commit()
+

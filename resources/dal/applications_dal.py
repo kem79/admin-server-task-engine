@@ -25,3 +25,10 @@ class ApplicationsDal:
         except NoResultFound:
             return False
 
+    def get(self, application_name):
+        try:
+            application = self.session.query(Application).filter(Application.name == application_name).one()
+            return application
+        except NoResultFound:
+            return None
+

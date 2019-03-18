@@ -1,3 +1,5 @@
+from sqlalchemy.orm.exc import NoResultFound
+
 from resources.dao.applications_dao import Application
 from resources.dao.baselines_dao import Baseline
 
@@ -14,6 +16,7 @@ class BaselinesDal:
                                                        Baseline.hatch_rate == hatch_rate,
                                                        Baseline.application_id == application.id).one()
         self.session.delete(baseline)
+        self.session.commit()
         return baseline.id
 
     def create(self, application_id, number_of_users, hatch_rate):
@@ -23,4 +26,13 @@ class BaselinesDal:
         self.session.add(new_baseline)
         self.session.commit()
         return new_baseline.id
+
+    def get(self, application_id, number_of_users, hatch_rate):
+        try:
+            baseline = self.session.query(Baseline).filter(Baseline.number_of_users == number_of_users,
+                                                           Baseline.hatch_rate == hatch_rate,
+                                                           Baseline.application_id == application_id).one()
+            return baseline
+        except NoResultFound:
+            return None
 
