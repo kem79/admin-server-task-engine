@@ -3,7 +3,7 @@ import subprocess
 proc_ids = {}
 
 
-def start(application_name, url, number_of_users, hatch_rate):
+def start(application_name, url, number_of_users, hatch_rate, locust_file):
     """
     starts the locust server
     :type application_name: str
@@ -19,11 +19,14 @@ def start(application_name, url, number_of_users, hatch_rate):
     :param hatch_rate: the number of user session to start every second at the start
     of the loading phase.
 
+    :type locust_file: str
+    :param locust_file: the name of the locust file.
+
     :return: PID of the process
     """
     proc = subprocess.Popen(['locust',
                              '--host', 'https://' + url,
-                             '-f', 'my_locust/locustfile.py',
+                             '-f', 'my_locust/{}'.format(locust_file),
                              '--csv', application_name,
                              '--no-web',
                              '-c', str(number_of_users),

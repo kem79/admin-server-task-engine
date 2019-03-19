@@ -1,5 +1,3 @@
-import json
-
 from app.task_engine import app
 from app import db_session
 from my_locust.tasks import start, stop
@@ -7,6 +5,34 @@ from my_locust.tasks import start, stop
 from resources import ApplicationsDal, DistributionsDal, BaselinesDal, RequestsDal
 
 from time import sleep
+
+
+@app.task
+def get_all(application_name):
+    """
+    Return all the baselines for a given application
+    :param application_name: the name of the micro-service
+    :return: 
+    """
+    session = db_session()
+    ad = ApplicationsDal(session)
+    application = ad.get(application_name)
+    if application:
+        bd = BaselinesDal(session)
+        baselines = bd.get_all(application_id=application.id)
+        if baselines:
+            result = []
+            for baseline in baselines:
+                a_baseline_dict = baseline.__dict__
+                del a_baseline_dict['_sa_instance_state']
+                del a_baseline_dict['application_id']
+                del a_baseline_dict['id']
+                result.append(a_baseline_dict)
+            return {application_name: result}
+        else:
+            return None
+    else:
+        return None
 
 
 @app.task
@@ -42,7 +68,9 @@ def get(application_name,
                 request_method = one_request_type_dict.pop('method')
                 request_method_name = one_request_type_dict.pop('name')
                 results[request_method] = {request_method_name: one_request_type_dict}
-            return results
+            return {application_name: results,
+                    'hach_rate': hatch_rate,
+                    'number_of_users': number_of_users}
         else:
             return None
     else:
@@ -69,9 +97,11 @@ def delete(application_name,
 
 @app.task
 def create(application_name,
-                  url,
-                  number_of_users,
-                  hatch_rate):
+           url,
+           number_of_users,
+           hatch_rate,
+           locust_file,
+           duration):
     """
     Create a performance baseline.
 
@@ -84,6 +114,12 @@ def create(application_name,
     :type number_of_users: int
     :param number_of_users: the total count of concurrent users to simulate
 
+    :type locust_file: str
+    :param locust_file: the name of the locut file (locustfile_<application_name>.py)
+
+    :type duration: int
+    :param duration: the duration of the performance baseline test in seconds.
+
     :type hatch_rate: int
     :param hatch_rate: the number of users to create every second until total count is reached.
     """
@@ -91,9 +127,9 @@ def create(application_name,
     session = db_session()
 
     # start locust server
-    proc_id = start(application_name, url, number_of_users, hatch_rate)
-    experience_total_time = int(number_of_users/hatch_rate) + 1
-    sleep(experience_total_time*3)
+    proc_id = start(application_name, url, number_of_users, hatch_rate, locust_file)
+    hatch_duration = int(number_of_users / hatch_rate) + 1
+    sleep(hatch_duration + duration)
     stop(proc_id)
 
     # verify the micro-service name is in database, if not create it.
@@ -102,7 +138,7 @@ def create(application_name,
 
     # Create a baseline for a given number of users and a hatch rate
     bd = BaselinesDal(session)
-    baseline_id = bd.create(app_id, number_of_users, hatch_rate)
+    baseline_id = bd.create(app_id, number_of_users, hatch_rate, duration)
 
     # save locust performance metrics (2 files)
     dd = DistributionsDal(session)
@@ -159,10 +195,21 @@ def create(application_name,
 
 if __name__ == '__main__':
     session = db_session()
-    from resources.dao.requests_dao import Request
-    requ = session.query(Request)
-    res = requ.get(1).__dict__
-    del res['_sa_instance_state']
-    print(res)
-    print(json.dumps(res))
+    # from resources.dao.requests_dao import Request
+    # requ = session.query(Request)
+    # res = requ.get(1).__dict__
+    # del res['_sa_instance_state']
+    # print(res)
+    # print(json.dumps(res))
     # print(session.query(Request).column_descriptions)
+
+    # from resources.dao.baselines_dao import Baseline
+    # baselines = session.query(Baseline).filter(Baseline.application_id == 2).all()
+    # for baseline in baselines:
+    #     print(baseline)
+
+    from resources.dao.requests_dao import Request
+
+    requs = session.query(Request)
+    for req in requs:
+        print(req)

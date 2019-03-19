@@ -19,9 +19,10 @@ class BaselinesDal:
         self.session.commit()
         return baseline.id
 
-    def create(self, application_id, number_of_users, hatch_rate):
+    def create(self, application_id, number_of_users, hatch_rate, duration):
         new_baseline = Baseline(number_of_users=number_of_users,
                                 hatch_rate=hatch_rate,
+                                duration=duration,
                                 application_id=application_id)
         self.session.add(new_baseline)
         self.session.commit()
@@ -36,3 +37,9 @@ class BaselinesDal:
         except NoResultFound:
             return None
 
+    def get_all(self, application_id):
+        try:
+            baselines = self.session.query(Baseline).filter(Baseline.application_id == application_id).all()
+            return baselines
+        except NoResultFound:
+            return None
