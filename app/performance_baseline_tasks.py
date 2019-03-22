@@ -1,3 +1,8 @@
+import json
+import traceback
+
+from celery import states
+
 from app.task_engine import app
 from app import db_session
 from my_locust.tasks import start, stop
@@ -5,6 +10,11 @@ from my_locust.tasks import start, stop
 from resources import ApplicationsDal, DistributionsDal, BaselinesDal, RequestsDal
 
 from time import sleep
+from celery.utils.log import get_task_logger
+from exceptions.admin_server_exceptions import BaselineAlreadyExist
+from celery.exceptions import Ignore
+
+logger = get_task_logger(__name__)
 
 
 @app.task
@@ -70,7 +80,8 @@ def get(application_name,
                 results[request_method] = {request_method_name: one_request_type_dict}
             return {application_name: results,
                     'hach_rate': hatch_rate,
-                    'number_of_users': number_of_users}
+                    'number_of_users': number_of_users,
+                    'duration': baseline.duration}
         else:
             return None
     else:
@@ -95,8 +106,9 @@ def delete(application_name,
     return baseline_id
 
 
-@app.task
-def create(application_name,
+@app.task(bind=True)
+def create(self,
+           application_name,
            url,
            number_of_users,
            hatch_rate,
@@ -126,21 +138,38 @@ def create(application_name,
     # create a session
     session = db_session()
 
+    logger.info('Create application {} if it does not already exist.'.format(application_name))
+    ad = ApplicationsDal(session)
+    app_id = ad.create_if_not_exist(application_name)
+
+    # Create a baseline for a given number of users and a hatch rate
+    bd = BaselinesDal(session)
+    try:
+        if bd.get(app_id, number_of_users, hatch_rate):
+            logger.warning('An identical baseline already exit for application {}. Aborting.'.format(
+                application_name
+            ))
+            raise BaselineAlreadyExist('The Baseline for {} with number of users {} and hatch rate {} already exists. '
+                                       'Delete it if you want to re-create the baseline.'.format(application_name,
+                                                                                                 number_of_users,
+                                                                                                 hatch_rate))
+    except BaselineAlreadyExist as e:
+        self.update_state(state=states.FAILURE, meta={'exc_type': type(e).__name__,
+                                                      'exc_message': traceback.format_exc().split('\n'),
+                                                      'message': str(e)})
+        raise Ignore()
+    else:
+        logger.info('Create new baseline for application {}'.format(application_name))
+        baseline_id = bd.create(app_id, number_of_users, hatch_rate, duration)
+
     # start locust server
     proc_id = start(application_name, url, number_of_users, hatch_rate, locust_file)
     hatch_duration = int(number_of_users / hatch_rate) + 1
     sleep(hatch_duration + duration)
     stop(proc_id)
 
-    # verify the micro-service name is in database, if not create it.
-    ad = ApplicationsDal(session)
-    app_id = ad.create_if_not_exist(application_name)
-
-    # Create a baseline for a given number of users and a hatch rate
-    bd = BaselinesDal(session)
-    baseline_id = bd.create(app_id, number_of_users, hatch_rate, duration)
-
     # save locust performance metrics (2 files)
+    logger.info('Save request performance and distribution to database.')
     dd = DistributionsDal(session)
     dd.create(baseline_id, csv_file=application_name + '_distribution.csv')
     rd = RequestsDal(session)

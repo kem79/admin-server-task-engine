@@ -1,0 +1,2 @@
+class BaselineAlreadyExist(Exception):
+    pass
