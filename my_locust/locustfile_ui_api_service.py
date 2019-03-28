@@ -14,9 +14,12 @@ class BashboardBehavior(TaskSet):
     # def get_all_countries_dashboard(self):
     #     self.client.get('/api/v1/dashboard/overview?country=all')
     #
-    # @task(1)
-    # def get_us_dashboard(self):
-    #     self.client.get('/api/v1/dashboard/overview?country=US')
+    @task(1)
+    def get_us_dashboard(self):
+        self.client.get('/api/v1/dashboard/overview?country=US',
+                        headers={'x-app-key': '804c41d8cfd74926185087402f166277',
+                                 'uid': '1143052'})
+
     #
     # @task(1)
     # def get_cluster_list(self):

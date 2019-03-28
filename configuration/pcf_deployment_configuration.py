@@ -23,6 +23,14 @@ def rabbitmq_uri():
     return broker_service_uri
 
 
+def postgres_uri():
+    pg_uri = [service['credentials']['uri']
+              for service in json.loads(os.getenv('VCAP_SERVICES'))['credhub']
+              if service['name'] == os.getenv('POSTGRES_CREDS_NAME')][0]
+    return pg_uri
+
+
 class PCFConfig(_BaseDeploymentConfiguration):
     broker_url = rabbitmq_uri()
     result_backend = redis_uri()
+    postgres_url = postgres_uri()

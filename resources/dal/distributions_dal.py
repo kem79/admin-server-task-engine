@@ -9,6 +9,9 @@ class DistributionsDal:
         super().__init__()
         self.session = session
 
+    def get_by_baseline_id(self, baseline_id):
+        return self.session.query(Distribution).filter_by(baseline_id=baseline_id).all()
+
     def create(self, baseline_id, csv_file):
         """
         Read Locust csv file containing the request distribution to the service and

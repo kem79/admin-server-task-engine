@@ -30,6 +30,7 @@ class BaselinesDal:
                 number_of_users,
                 hatch_rate
             ))
+            raise NoResultFound
 
     def create(self, application_id, number_of_users, hatch_rate, duration):
         new_baseline = Baseline(number_of_users=number_of_users,

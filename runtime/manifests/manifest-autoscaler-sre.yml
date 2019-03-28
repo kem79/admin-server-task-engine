@@ -1,0 +1,15 @@
+---
+instance_limits:
+  min: 2
+  max: 5
+rules:
+- rule_type: "cpu"
+  threshold:
+    min: 20
+    max: 70
+- rule_type: "memory"
+  threshold:
+    min: 20
+    max: 70
+scheduled_limit_changes: []
+

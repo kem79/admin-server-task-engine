@@ -1,7 +1,7 @@
-import json
 import traceback
 
 from celery import states
+from sqlalchemy.orm.exc import NoResultFound
 
 from app.task_engine import app
 from app import db_session
@@ -67,7 +67,11 @@ def get(application_name,
         bd = BaselinesDal(session)
         baseline = bd.get(application.id, number_of_users, hatch_rate)
         if baseline:
-            results = {}
+            results = {'requests': None,
+                       'distributions': None}
+            requests = []
+            distributions = []
+
             rd = RequestsDal(session)
             requests_performance = rd.get_by_baseline_id(baseline.id)
             for one_request_type in requests_performance:
@@ -77,7 +81,21 @@ def get(application_name,
                 del one_request_type_dict['baseline_id']
                 request_method = one_request_type_dict.pop('method')
                 request_method_name = one_request_type_dict.pop('name')
-                results[request_method] = {request_method_name: one_request_type_dict}
+                requests.append({request_method: {request_method_name: one_request_type_dict}})
+
+            dd = DistributionsDal(session)
+            distributions_records = dd.get_by_baseline_id(baseline.id)
+            for a_distribution in distributions_records:
+                a_distribution_dict = a_distribution.__dict__
+                del a_distribution_dict['_sa_instance_state']
+                del a_distribution_dict['id']
+                del a_distribution_dict['baseline_id']
+                request_name = a_distribution_dict.pop('name')
+                distributions.append({request_name: a_distribution_dict})
+
+            results['requests'] = requests
+            results['distributions'] = distributions
+
             return {application_name: results,
                     'hach_rate': hatch_rate,
                     'number_of_users': number_of_users,
@@ -88,8 +106,9 @@ def get(application_name,
         return None
 
 
-@app.task
-def delete(application_name,
+@app.task(bind=True)
+def delete(self,
+           application_name,
            number_of_users,
            hatch_rate):
     """
@@ -102,8 +121,14 @@ def delete(application_name,
     # create session
     session = db_session()
     bd = BaselinesDal(session)
-    baseline_id = bd.delete(application_name, number_of_users, hatch_rate)
-    return baseline_id
+    try:
+        baseline_id = bd.delete(application_name, number_of_users, hatch_rate)
+        return baseline_id
+    except NoResultFound as e:
+        self.update_state(state=states.FAILURE, meta={'exc_type': type(e).__name__,
+                                                      'exc_message': traceback.format_exc().split('\n'),
+                                                      'message': str(e)})
+    raise Ignore()
 
 
 @app.task(bind=True)

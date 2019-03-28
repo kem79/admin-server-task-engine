@@ -12,7 +12,7 @@ class Request(Base):
     id = Column(Integer, autoincrement='auto', primary_key=True)
     method = Column(String(250), nullable=False)
     name = Column(String(250), nullable=False)
-    number_of_requests = Column(String(250))
+    number_of_requests = Column(Integer)
     number_of_failures = Column(Integer)
     median_response_time = Column(Float(precision=2))
     average_response_time = Column(Float(precision=2))

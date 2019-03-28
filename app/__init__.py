@@ -1,9 +1,12 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-Base = declarative_base()
+from configuration import deployment_configuration
 
-engine = create_engine('postgres://guest:guest@192.168.99.100:5432/guest')
+Base = declarative_base(metadata=MetaData(schema='admin_server'))
+
+engine = create_engine(deployment_configuration.postgres_url,
+                       pool_pre_ping=True)
 Base.metadata.bind = engine
 db_session = sessionmaker(bind=engine)
