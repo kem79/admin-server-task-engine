@@ -50,11 +50,11 @@ if [ $? -ne 0 ]; then
     echo "  [Rails.AI] create credhub for POSTGRES"
     cf create-service credhub default POSTGRES -c "${postgres_creds}"
 else
-    echo "  [Rails.AI] Re-use service instance BACKEND"
+    echo "  [Rails.AI] Re-use service instance POSTGRES"
 fi
 
 cf configure-autoscaling task-engine ./runtime/manifests/manifest-autoscaler-sre.yml
 
 echo ''
 echo "  [Rails.AI] Push the micro-service"
-cf push -f "${manifest}" task
+cf push -f "${manifest}" task-engine
