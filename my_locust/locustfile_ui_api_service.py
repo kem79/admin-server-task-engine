@@ -1,6 +1,4 @@
-
-
-from locust import HttpLocust, TaskSet, task, seq_task
+from locust import HttpLocust, TaskSet, seq_task
 
 
 class UiApiService(TaskSet):
@@ -14,7 +12,8 @@ class UiApiService(TaskSet):
     clusterId = '52f38501-cbc3-d779-683b-c7964870c48e'
     vcParam = '?vcenter_uuid=' + vcenterId
     dcParam = '?data_center=%s&vcenter_uuid=%s' % (datacenter, vcenterId)
-    clusterParam = '?cluster=%s' % clusterId
+    clusterParam = '?cluster_uuid=%s' % clusterId
+    clusterParam4Inventory = '?cluster=%s' % clusterId
     countryParam = '?country=%s' % country
     regionParam = '?country=%s&region=%s' % (country, region)
 
@@ -98,7 +97,7 @@ class UiApiService(TaskSet):
     # ----------------------One Cluster---------------------------------------
     @seq_task(16)
     def logical_cluster_summary(self):
-        self.inventory(self.clusterParam)
+        self.inventory(self.clusterParam4Inventory)
         self.inventory_summary(self.clusterParam)
         self.alarms_summary(self.clusterParam)
         self.storage_usage(self.clusterParam)
@@ -123,7 +122,7 @@ class UiApiService(TaskSet):
 
     @seq_task(21)
     def logical_cluster_inventory(self):
-        self.inventory(self.clusterParam)
+        self.inventory(self.clusterParam4Inventory)
     # ----------------------The World--------------------------------
     @seq_task(22)
     def physical_world_summary(self):

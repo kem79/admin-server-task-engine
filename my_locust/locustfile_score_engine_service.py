@@ -12,7 +12,7 @@ class ScoreEngineService(TaskSet):
     clusterId = '52f38501-cbc3-d779-683b-c7964870c48e'
     vcParam = '?vcenter_uuid=' + vcenterId
     dcParam = '?data_center=%s&vcenter_uuid=%s' % (datacenter, vcenterId)
-    clusterParam = '?cluster=%s' % clusterId
+    clusterParam = '?cluster_uuid=%s' % clusterId
     countryParam = '?country=%s' % country
     regionParam = '?country=%s&region=%s' % (country, region)
 
@@ -108,7 +108,10 @@ class ScoreEngineService(TaskSet):
         self.sendGetRequest('/api/v1/health_score/summary' + params)
 
     def healthscore_history(self, params):
-        self.sendGetRequest('/api/v1/health_score/history' + params + '&time_range=2')
+        if params != '':
+            self.sendGetRequest('/api/v1/health_score/history' + params + '&time_range=2')
+        else:
+            self.sendGetRequest('/api/v1/health_score/history?time_range=2')
 
     def healthscore_issues(self, params):
         self.sendGetRequest('/api/v1/health_score/issues' + params)

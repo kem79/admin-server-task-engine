@@ -1,5 +1,6 @@
 from locust import HttpLocust, TaskSet, seq_task
 
+
 class DataMetricsService(TaskSet):
 
     head = {"x-app-key": "804c41d8cfd74926185087402f166277",
@@ -9,7 +10,8 @@ class DataMetricsService(TaskSet):
     clusterId = '52f38501-cbc3-d779-683b-c7964870c48e'
     hostId = '4c4c4544-004a-3510-8036-c4c04f485132'
     dcParam = '?data_center=%s&vcenter_uuid=%s' % (datacenter, vcenterId)
-    clusterParam = '?cluster=%s' % clusterId
+    clusterParam = '?cluster_uuid=%s' % clusterId
+    clusterParam4usage = '?cluster_uuid=5242fd84-1c73-2279-38aa-f5d2020e6f64'
 
     # One task per page that calls data-metrics-service
 
@@ -21,7 +23,7 @@ class DataMetricsService(TaskSet):
     # -----------------------One Cluster---------------------------------------
     @seq_task(2)
     def logical_cluster_storage(self):
-        self.storage_usage_prediction(self.clusterParam)
+        self.storage_usage_prediction(self.clusterParam4usage)
 
     @seq_task(3)
     def logical_cluster_performance(self):
