@@ -6,7 +6,6 @@ from resources.dao.distributions_dao import Distribution
 class DistributionsDal:
 
     def __init__(self, session):
-        super().__init__()
         self.session = session
 
     def get_by_baseline_id(self, baseline_id):

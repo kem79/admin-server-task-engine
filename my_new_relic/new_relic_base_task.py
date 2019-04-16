@@ -1,8 +1,7 @@
-from celery import Task
 import os
 
 
-class NewRelicBaseTask(Task):
+class NewRelicBase:
 
     _api_key = None
     _admin_api_key = None

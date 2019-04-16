@@ -1,4 +1,3 @@
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm.exc import NoResultFound
 
 from resources.dao.applications_dao import Application
@@ -7,7 +6,6 @@ from resources.dao.applications_dao import Application
 class ApplicationsDal:
 
     def __init__(self, session):
-        super().__init__()
         self.session = session
 
     def create_if_not_exist(self, application_name):

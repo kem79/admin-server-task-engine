@@ -7,6 +7,7 @@ from resources.dao.applications_dao import Application
 from resources.dao.baselines_dao import Baseline
 from resources.dao.distributions_dao import Distribution
 from resources.dao.requests_dao import Request
+from resources.dao.backend_metrics_dao import BackendMetric
 
 if __name__ == '__main__':
     if 'POSTGRES_URI' not in os.environ:

@@ -1,8 +1,9 @@
 from app import Base
 from resources.dao.baselines_dao import Baseline
 
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship, backref
+from datetime import datetime
 
 
 class Distribution(Base):
@@ -19,6 +20,8 @@ class Distribution(Base):
     ninety_eight_percentile = Column(Integer())
     ninety_nine_percentile = Column(Integer())
     one_hundred_percentile = Column(Integer())
+    created_on = Column(DateTime, default=datetime.utcnow())
+    updated_on = Column(DateTime, default=datetime.utcnow(), onupdate=datetime.utcnow())
     baseline_id = Column(Integer, ForeignKey('baseline.id'), nullable=False)
     baseline = relationship(Baseline,
                             backref=backref('distributions',

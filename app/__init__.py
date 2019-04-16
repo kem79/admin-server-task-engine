@@ -7,6 +7,7 @@ from configuration import deployment_configuration
 Base = declarative_base(metadata=MetaData(schema='admin_server'))
 
 engine = create_engine(deployment_configuration.postgres_url,
+                       connect_args={"application_name": "task-engine"},
                        pool_pre_ping=True)
 Base.metadata.bind = engine
 db_session = sessionmaker(bind=engine)

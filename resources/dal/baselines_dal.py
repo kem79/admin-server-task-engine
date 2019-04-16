@@ -8,7 +8,6 @@ import logging
 class BaselinesDal:
 
     def __init__(self, session):
-        super().__init__()
         self.session = session
 
     def delete(self, application_name, number_of_users, hatch_rate):
