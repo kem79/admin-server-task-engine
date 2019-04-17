@@ -39,7 +39,7 @@ class DataMetricsService(TaskSet):
         self.sendGetRequest('/api/v1/storage/usage_prediction' + params)
 
     def hosts_performance_summary(self, params):
-        metricType = 'cpu,mem,disk,net'
+        metricType = 'cpu%2Cmem%2Cdisk%2Cnet'
         # Time range is 24 hours as UI default
         fromTime = '1554862256241'
         toTime = '1554948656241'
@@ -47,7 +47,7 @@ class DataMetricsService(TaskSet):
                             % (params, metricType, fromTime, toTime))
 
     def hosts_performance_details(self, params):
-        metricType = 'cpu,mem,disk,net'
+        metricType = 'cpu%2Cmem%2Cdisk%2Cnet'
         # Time range is 24 hours as UI default
         fromTime = '1554862256241'
         toTime = '1554948656241'
