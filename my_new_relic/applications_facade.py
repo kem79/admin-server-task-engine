@@ -1,6 +1,19 @@
+import os
+
 from my_new_relic.new_relic_base_task import NewRelicBase
 from newrelic_api import Applications
 from exceptions.admin_server_exceptions import ApplicationDoesNotExist
+import logging
+from logging import INFO
+import sys
+
+logger = logging.getLogger(__name__)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(os.getenv('LOG_LEVEL', INFO))
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 class ApplicationFacade(NewRelicBase):
@@ -14,13 +27,13 @@ class ApplicationFacade(NewRelicBase):
         :rtype int
         :return: the id of the application in New Relic database. Return None if no application was found.
         """
-        print('Retrieve application {} id...'.format(name))
         nr_apps = Applications(self.api_key)
 
         applications = nr_apps.list(filter_name=name)
         if 'applications' in applications.keys() and applications['applications']:
             app_ids = [app['id'] for app in applications['applications'] if app['name'] == name]
             if len(app_ids) == 1:
+                logger.info('Retrieve application {} id {}.'.format(name, app_ids[0]))
                 return int(app_ids[0])
         raise ApplicationDoesNotExist('Application {} does not exist in New Relic.'.format(name))
 
@@ -76,7 +89,10 @@ class ApplicationFacade(NewRelicBase):
                              for metric in app_metrics['metric_data']['metrics']
                              if metric['name'] == 'WebTransactionTotalTime'][0]
                             ]
-
+        logger.debug('collect from {} to {}.'.format(from_time, to_time))
+        logger.debug('memory: {}'.format(mem_values))
+        logger.debug('cpu: {}'.format(cpu_values))
+        logger.debug('response time: {}'.format(resp_time_values))
         return {
                     'avg_memory_usage': sum(mem_values) / len(mem_values),
                     'avg_cpu_usage': sum(cpu_values) / len(cpu_values),
@@ -116,13 +132,13 @@ class ApplicationFacade(NewRelicBase):
         :return: a JSON representing the metrics data.
         """
         nr_apps = Applications(self.api_key)
-        print('Collect metrics data for application id {}.'.format(application_id))
         response = nr_apps.metric_data(application_id,
                                        metric_names,
                                        metric_values,
                                        from_datetime,
                                        to_datetime,
                                        summarize)
+        logger.debug('Collected performance metrics from new relic:\n{}'.format(response))
         return response
 
 

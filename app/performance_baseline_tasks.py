@@ -1,7 +1,9 @@
 import json
+import os
 import traceback
 
 from celery import states
+from newrelic_api.exceptions import NewRelicAPIServerException
 from sqlalchemy.orm.exc import NoResultFound
 
 from app.task_engine import app
@@ -13,14 +15,21 @@ import resources
 
 from time import sleep
 from celery.utils.log import get_task_logger
-from exceptions.admin_server_exceptions import BaselineAlreadyExist
+from exceptions.admin_server_exceptions import BaselineAlreadyExist, ApplicationDoesNotExist
 from celery.exceptions import Ignore
 from datetime import datetime
+import logging
+from logging import INFO
+import sys
 
 from resources import BackendMetricsDal
 
 logger = get_task_logger(__name__)
-
+h = logging.StreamHandler(sys.stdout)
+h.setLevel(os.getenv('LOG_LEVEL', INFO))
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+h.setFormatter(formatter)
+logger.addHandler(h)
 
 @app.task
 def get_all(application_name):
@@ -213,11 +222,11 @@ def create(self,
             baseline_id = bd.create(app_id, number_of_users, hatch_rate, duration)
 
         # start locust server
-        start_time = datetime.strftime(datetime.utcnow(), '%Y-%m-%dT%H:%M:%S')
+        start_time = datetime.strftime(datetime.utcnow(), '%Y-%m-%dT%H:%M:00')
         proc_id = start(application_name, url, number_of_users, hatch_rate, locust_file)
         hatch_duration = int(number_of_users / hatch_rate) + 1
         sleep(hatch_duration + duration)
-        end_time = datetime.strftime(datetime.utcnow(), '%Y-%m-%dT%H:%M:%S')
+        end_time = datetime.strftime(datetime.utcnow(), '%Y-%m-%dT%H:%M:00')
         stop(proc_id)
 
         # # save locust performance metrics (2 files)
@@ -239,11 +248,15 @@ def create(self,
         bed = BackendMetricsDal(session)
         bed.create(baseline_id,
                    res,
-                   datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S'),
-                   datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%S'))
+                   datetime.strptime(start_time, '%Y-%m-%dT%H:%M:00'),
+                   datetime.strptime(end_time, '%Y-%m-%dT%H:%M:00'))
 
         logger.info('Created new baseline for application {}.'.format(application_name))
         return 'Done'
+    except ApplicationDoesNotExist:
+        logger.exception('Application name {} is not present in New Relic. Verify your monitoring setup.'.format(application_name))
+    except NewRelicAPIServerException:
+        logger.exception('There was a problem when trying to collect performance data from New Relic.')
     finally:
         session.close()
 

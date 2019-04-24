@@ -43,6 +43,7 @@ class RequestsDal:
             csv_lines = csv.readlines()[1:-1]
         for line in csv_lines:
             line_tokens = [tokens.replace('"', '') for tokens in line.split(',')]
+            line_tokens = [tokens.replace('N/A', '0') for tokens in line_tokens]
             new_request = Request(method=line_tokens[0],
                                   name=line_tokens[1],
                                   number_of_requests=line_tokens[2],
