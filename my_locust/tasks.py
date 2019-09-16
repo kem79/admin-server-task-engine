@@ -1,6 +1,9 @@
 import subprocess
 
+from celery.utils.log import get_task_logger
+
 proc_ids = {}
+logger = get_task_logger(__name__)
 
 
 def start(application_name, url, number_of_users, hatch_rate, locust_file):
@@ -31,7 +34,7 @@ def start(application_name, url, number_of_users, hatch_rate, locust_file):
                              '--no-web',
                              '-c', str(number_of_users),
                              '-r', str(hatch_rate)])
-    print("started locust (PID {}).".format(proc.pid))
+    logger.info("started locust (PID {}).".format(proc.pid))
     proc_ids[proc.pid] = proc
     return proc.pid
 
@@ -41,8 +44,8 @@ def stop(proc_id):
     Stop the locust server
     :return:
     """
-    print('Stop process id {}...'.format(proc_id))
+    logger.info('Stop process id {}...'.format(proc_id))
     try:
         proc_ids[proc_id].terminate()
     except KeyError:
-        print('Sorry, can\'t find process id {}'.format(proc_id))
+        logger.error('Sorry, can\'t find process id {}'.format(proc_id))

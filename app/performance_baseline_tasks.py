@@ -1,5 +1,4 @@
 import json
-import os
 import traceback
 
 from celery import states
@@ -9,7 +8,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from app.task_engine import app
 from app import db_session
 from my_new_relic.applications_facade import ApplicationFacade
-from my_locust.tasks import start, stop
+from my_locust.tasks import start
 
 import resources
 
@@ -18,18 +17,11 @@ from celery.utils.log import get_task_logger
 from exceptions.admin_server_exceptions import BaselineAlreadyExist, ApplicationDoesNotExist
 from celery.exceptions import Ignore
 from datetime import datetime
-import logging
-from logging import INFO
-import sys
+import psutil
 
 from resources import BackendMetricsDal
 
 logger = get_task_logger(__name__)
-h = logging.StreamHandler(sys.stdout)
-h.setLevel(os.getenv('LOG_LEVEL', INFO))
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-h.setFormatter(formatter)
-logger.addHandler(h)
 
 @app.task
 def get_all(application_name):
@@ -223,11 +215,18 @@ def create(self,
 
         # start locust server
         start_time = datetime.strftime(datetime.utcnow(), '%Y-%m-%dT%H:%M:00')
-        proc_id = start(application_name, url, number_of_users, hatch_rate, locust_file)
-        hatch_duration = int(number_of_users / hatch_rate) + 1
-        sleep(hatch_duration + duration)
-        end_time = datetime.strftime(datetime.utcnow(), '%Y-%m-%dT%H:%M:00')
-        stop(proc_id)
+
+        try:
+            proc_id = start(application_name, url, number_of_users, hatch_rate, locust_file)
+            while psutil.pid_exists(proc_id):
+                sleep(5)
+            end_time = datetime.strftime(datetime.utcnow(), '%Y-%m-%dT%H:%M:00')
+        except FileNotFoundError as e:
+            session.rollback()
+            self.update_state(state=states.FAILURE, meta={'exc_type': type(e).__name__,
+                                                          'exc_message': traceback.format_exc().split('\n'),
+                                                          'message': str(e)})
+            raise Ignore()
 
         # # save locust performance metrics (2 files)
         logger.debug('Save request performance and distribution to database.')
@@ -240,23 +239,35 @@ def create(self,
         nr_apps_facade = ApplicationFacade()
         app_id = nr_apps_facade.application_id_by_name(application_name)
         logger.debug('Collect backend metrics for time interval [{}, {}]'.format(start_time, end_time))
-        res = nr_apps_facade.collect_backend_performance_metrics(app_id,
-                                                                 start_time,
-                                                                 end_time)
-        logger.debug('New Relic metrics for {}:\n{}'.format(application_name,
-                                                            json.dumps(res, indent=2)))
-        bed = BackendMetricsDal(session)
-        bed.create(baseline_id,
-                   res,
-                   datetime.strptime(start_time, '%Y-%m-%dT%H:%M:00'),
-                   datetime.strptime(end_time, '%Y-%m-%dT%H:%M:00'))
+        try:
+            res = nr_apps_facade.collect_backend_performance_metrics(app_id,
+                                                                     start_time,
+                                                                     end_time)
+            logger.debug('New Relic metrics for {}:\n{}'.format(application_name,
+                                                                json.dumps(res, indent=2)))
+            bed = BackendMetricsDal(session)
+            bed.create(baseline_id,
+                       res,
+                       datetime.strptime(start_time, '%Y-%m-%dT%H:%M:00'),
+                       datetime.strptime(end_time, '%Y-%m-%dT%H:%M:00'))
 
-        logger.info('Created new baseline for application {}.'.format(application_name))
-        return 'Done'
+            logger.info('Created new baseline for application {}.'.format(application_name))
+            return 'Done'
+        except IndexError as e:
+            session.rollback()
+            msg = 'There was no performance data in NR for application name {}. ' \
+                  'The backend performance data won\'t be recorded in database.'.format(application_name)
+            logger.error(msg)
+            traceback.print_exc()
+            self.update_state(state=states.FAILURE,
+                              meta={'exc_type': type(e).__name__,
+                                    'exc_message': traceback.format_exc().split('\n'),
+                                    'message': msg})
+            raise Ignore()
+
     except ApplicationDoesNotExist:
         logger.exception('Application name {} is not present in New Relic. Verify your monitoring setup.'.format(application_name))
     except NewRelicAPIServerException:
         logger.exception('There was a problem when trying to collect performance data from New Relic.')
     finally:
         session.close()
-
