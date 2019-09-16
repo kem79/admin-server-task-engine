@@ -1,8 +1,5 @@
---extra-index-url=http://10.62.65.209:4040/railai/dev
---trusted-host=10.62.65.209
---trusted-host=pypi.python.org
---trusted-host=pypi.org
---trusted-host=files.pythonhosted.org
+--index-url https://artifactory.isus.emc.com/artifactory/api/pypi/pypi/simple/
+--trusted-host artifactory.isus.emc.com
 celery==4.2.1
 celery[redis]==4.2.1
 redis==2.10.6
