@@ -1,19 +1,9 @@
-import os
-
 from my_new_relic.new_relic_base_task import NewRelicBase
 from newrelic_api import Applications
 from exceptions.admin_server_exceptions import ApplicationDoesNotExist
 import logging
-from logging import INFO
-import sys
 
 logger = logging.getLogger(__name__)
-
-handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(os.getenv('LOG_LEVEL', INFO))
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 
 class ApplicationFacade(NewRelicBase):
