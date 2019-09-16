@@ -6,15 +6,16 @@ applications:
   instances: 1
   timeout: 180
   no-route: true
-  buildpack: dicf_python_buildpack_latest
+  buildpack: dicf_python_buildpack_1629_cflinuxfs3
+  stack: cflinuxfs3
   health-check-type: process
   env:
     BROKER_NAME: BROKER
-    BACKEND_NAME: BACKEND
+    BACKEND_NAME: REDIS_INSTANCE
     POSTGRES_CREDS_NAME: POSTGRES
     PYTHONPATH: app
     ENVIRONMENT: prod
   services:
   - BROKER
-  - BACKEND
+  - REDIS_INSTANCE
   - POSTGRES

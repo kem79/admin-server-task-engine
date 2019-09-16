@@ -1,18 +1,18 @@
 import json
 import os
+import base64
 
 from configuration.base_deployment_configuration import _BaseDeploymentConfiguration
 
 
 def redis_uri():
     backend_service = [service
-                       for service in json.loads(os.getenv('VCAP_SERVICES'))['p-redis']
+                       for service in json.loads(os.getenv('VCAP_SERVICES'))['user-provided']
                        if service['name'] == os.getenv('BACKEND_NAME')][0]
 
-    return 'redis://:{password}@{hostname}:{port}'.format(
-        password=backend_service['credentials']['password'],
-        hostname=backend_service['credentials']['host'],
-        port=backend_service['credentials']['port']
+    return 'redis://:{password}@{hostname}'.format(
+        password=base64.b64decode(backend_service['credentials']['REDIS_PASSWORD']).decode('utf-8'),
+        hostname=backend_service['credentials']['REDIS_SERVER_URL'],
     )
 
 
